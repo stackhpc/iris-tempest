@@ -19,5 +19,5 @@ import tempest.test
 
 
 class TestCase(tempest.test.BaseTestCase):
-
     """Test case base class for all unit tests."""
+    credentials = ['primary']
