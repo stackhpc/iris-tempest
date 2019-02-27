@@ -15,14 +15,13 @@
 
 from collections import namedtuple
 
-from tempest.api import compute
 from tempest import config
-from tempest.lib.common import api_version_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from tempest.lib.exceptions import TempestException
 
 from iris_tempest_plugin.tests import base
+from iris_tempest_plugin.tests.base import ComputeTest
 
 CONF = config.CONF
 
@@ -96,40 +95,6 @@ class SpecInvalid(TempestException):
         super(SpecInvalid, self).__init__(*args, **kwargs)
 
 
-class ComputeTest(base.TestCase):
-
-    def setUp(self):
-        super(ComputeTest, self).setUp()
-        if hasattr(self, "request_microversion"):
-            self.useFixture(
-                compute.api_microversion_fixture.APIMicroversionFixture(
-                    self.request_microversion))
-
-    @classmethod
-    def skip_checks(cls):
-        super(ComputeTest, cls).skip_checks()
-        if not CONF.service_available.nova:
-            raise cls.skipException("Nova is not available")
-        cfg_min_version = CONF.compute.min_microversion
-        cfg_max_version = CONF.compute.max_microversion or 'latest'
-        if hasattr(cls, "min_microversion") and hasattr(cls,
-                                                        "max_microversion"):
-            api_version_utils.check_skip_with_microversion(
-                cls.min_microversion,
-                cls.max_microversion,
-                cfg_min_version,
-                cfg_max_version)
-
-    @classmethod
-    def resource_setup(cls):
-        super(ComputeTest, cls).resource_setup()
-        if hasattr(cls, "min_microversion"):
-            cls.request_microversion = (
-                api_version_utils.select_request_microversion(
-                    cls.min_microversion,
-                    CONF.compute.min_microversion))
-
-
 class NovaFlavorTest(ComputeTest):
     LIMIT = None
 
@@ -165,6 +130,7 @@ class NovaFlavorTest(ComputeTest):
         super(NovaFlavorTest, self).setUp()
         self.client = self.os_primary.flavors_client
 
+    @decorators.idempotent_id('b19db46c-e910-4d37-9f75-2a60a2ebd21d')
     def test_apel_cpu_cost_on_every_flavor(self):
         client = self.client
         extra_specs = {
